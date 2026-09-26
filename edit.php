@@ -1,10 +1,8 @@
 <?php
 /**
  * =====================================================================
- * KINETIC PRODUCT MANAGER // PRODUCT EDIT (UPDATE)
+ * PRODUCT MANAGER // PRODUCT EDIT (SHADCN ZINC FORM)
  * =====================================================================
- * Menangani pembaruan data spesimen, form terisi (pre-filled),
- * validasi keunikan nama mengecualikan ID sendiri, dan Pola PRG.
  */
 
 declare(strict_types=1);
@@ -23,7 +21,6 @@ if ($id <= 0) {
 }
 
 // 2. Ambil Data Perangkat Saat Ini Menggunakan PDO Prepared Statement
-// Syarat Query Slide 16: SELECT by ID -> $pdo->prepare(...)
 $stmt = $pdo->prepare('SELECT * FROM products WHERE id = :id');
 $stmt->execute(['id' => $id]);
 $product = $stmt->fetch();
@@ -73,8 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stock = (int)$_POST['stock'];
     $description = trim((string)($_POST['description'] ?? ''));
     $imageFilename = ($hasNewUpload && $uploadResult['filename']) ? $uploadResult['filename'] : $product['image'];
+
     try {
-        // Syarat Query Slide 16: UPDATE -> $pdo->prepare(...)
         $updateSql = "UPDATE products SET 
                         name = :name, 
                         category = :category, 
@@ -105,8 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         clearOldInput();
         regenerateCsrfToken();
         setFlash('success', 'Data produk "' . $name . '" [SKU-' . str_pad((string)$id, 4, '0', STR_PAD_LEFT) . '] berhasil diperbarui.', 'Pembaruan Berhasil');
-        
-        // Pola PRG: Redirect 303 ke index.php
         redirect('index.php');
     } catch (PDOException $e) {
         error_log('[UPDATE_PRODUCT_ERROR] ' . $e->getMessage());
@@ -118,8 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // --- MENAMPILKAN FORMULIR DENGAN PRE-FILLED VALUES ---
 $formErrors = getFormErrors();
-
-// Prioritaskan nilai input lama jika baru saja gagal validasi, atau fallback ke data basis data
 $valName = (string)getOldInput('name', $product['name']);
 $valCategory = (string)getOldInput('category', $product['category']);
 $valPrice = (string)getOldInput('price', (string)$product['price']);
@@ -135,200 +128,218 @@ $defaultCategories = [
     'Laboratory Instrument'
 ];
 
+$skuFormatted = 'SKU-' . str_pad((string)$product['id'], 4, '0', STR_PAD_LEFT);
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="form-wrapper">
-    <div class="form-title-group">
-        <a href="index.php" class="back-link">
-            &larr; Kembali ke Katalog
-        </a>
-        <h2 class="form-main-heading">Edit Data Produk</h2>
-        <p class="form-sub-heading">
-            Perbarui spesifikasi produk: <span class="mono" style="color: var(--brand-blue); font-weight: 700;">[SKU-<?= str_pad((string)$product['id'], 4, '0', STR_PAD_LEFT) ?>]</span>
-        </p>
-    </div>
+<main class="app-container" style="flex: 1;">
+    <div class="form-container">
+        <!-- Breadcrumb -->
+        <nav class="form-breadcrumb" aria-label="Breadcrumb">
+            <a href="index.php">Katalog</a>
+            <span>/</span>
+            <span>Edit</span>
+            <span>/</span>
+            <span style="color: var(--foreground); font-weight: 500;" class="font-mono">[<?= $skuFormatted ?>]</span>
+        </nav>
 
-    <div class="form-card">
-        <form action="edit.php?id=<?= (int)$product['id'] ?>" method="POST" enctype="multipart/form-data" novalidate id="product-form">
-            <!-- CSRF Token Hidden Field (Slide 16) -->
-            <?= csrfField() ?>
-            <input type="hidden" name="id" value="<?= (int)$product['id'] ?>">
-
-            <div class="form-layout-grid">
-                <!-- 1. NAMA PRODUK -->
-                <div class="form-group col-full">
-                    <label for="name" class="input-label">
-                        <span>Nama Produk <span class="required">*</span></span>
-                        <span class="mono" style="font-size: 0.72rem; color: var(--text-dim);">Min. 3 karakter &bull; Unik</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="name" 
-                        name="name" 
-                        class="form-input <?= isset($formErrors['name']) ? 'has-error' : '' ?>" 
-                        value="<?= e($valName) ?>"
-                        required
-                    >
-                    <?php if (isset($formErrors['name'])): ?>
-                        <div class="error-text"><?= e($formErrors['name']) ?></div>
-                    <?php endif; ?>
+        <!-- Form Card (Shadcn Card) -->
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h2 class="card-title">Edit Produk</h2>
+                    <span class="badge badge-outline font-mono" style="font-size: 0.75rem;">
+                        <?= $skuFormatted ?>
+                    </span>
                 </div>
-
-                <!-- 2. KATEGORI PRODUK -->
-                <div class="form-group">
-                    <label for="category" class="input-label">
-                        <span>Kategori Produk <span class="required">*</span></span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="category" 
-                        name="category" 
-                        list="category-options" 
-                        class="form-input <?= isset($formErrors['category']) ? 'has-error' : '' ?>" 
-                        value="<?= e($valCategory) ?>"
-                        required
-                    >
-                    <datalist id="category-options">
-                        <?php foreach ($defaultCategories as $cat): ?>
-                            <option value="<?= e($cat) ?>"></option>
-                        <?php endforeach; ?>
-                    </datalist>
-                    <?php if (isset($formErrors['category'])): ?>
-                        <div class="error-text"><?= e($formErrors['category']) ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- 3. KUANTITAS STOK -->
-                <div class="form-group">
-                    <label for="stock" class="input-label">
-                        <span>Kuantitas Stok <span class="required">*</span></span>
-                        <span id="stock-health-preview" class="stock-tag stock-nominal" style="font-size: 0.68rem; padding: 2px 7px;">
-                            Tersedia
-                        </span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="stock" 
-                        name="stock" 
-                        min="0" 
-                        step="1" 
-                        class="form-input mono <?= isset($formErrors['stock']) ? 'has-error' : '' ?>" 
-                        value="<?= e($valStock) ?>"
-                        required
-                    >
-                    <?php if (isset($formErrors['stock'])): ?>
-                        <div class="error-text"><?= e($formErrors['stock']) ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- 4. HARGA SATUAN (IDR) -->
-                <div class="form-group col-full">
-                    <label for="price" class="input-label">
-                        <span>Harga Satuan (IDR) <span class="required">*</span></span>
-                        <span class="mono" id="price-preview" style="font-size: 0.8rem; font-weight: 700; color: var(--brand-blue);">Rp 0</span>
-                    </label>
-                    <input 
-                        type="number" 
-                        id="price" 
-                        name="price" 
-                        min="1" 
-                        step="1" 
-                        class="form-input mono <?= isset($formErrors['price']) ? 'has-error' : '' ?>" 
-                        value="<?= e($valPrice) ?>"
-                        required
-                    >
-                    <?php if (isset($formErrors['price'])): ?>
-                        <div class="error-text"><?= e($formErrors['price']) ?></div>
-                    <?php endif; ?>
-
-                    <!-- Live Valuation Calculator -->
-                    <div class="valuation-calc-box">
-                        <span class="valuation-calc-title">Estimasi Total Valuasi Persediaan:</span>
-                        <span class="valuation-calc-val" id="total-batch-valuation">Rp 0</span>
-                    </div>
-                </div>
-
-                <!-- 5. UPLOAD / GANTI GAMBAR -->
-                <div class="form-group col-full">
-                    <label class="input-label">
-                        <span>Foto Produk (Opsional)</span>
-                        <span class="mono" style="font-size: 0.72rem; color: var(--text-dim);">Penggantian foto produk</span>
-                    </label>
-
-                    <?php if (!empty($product['image']) && file_exists(__DIR__ . '/uploads/' . $product['image'])): ?>
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 10px 14px; background: var(--canvas-surface-subtle); border: 1px solid var(--line-hairline); border-radius: var(--radius-md);">
-                            <img src="uploads/<?= e($product['image']) ?>" alt="Foto Aktif" style="width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--line-hairline);">
-                            <div style="font-size: 0.82rem;">
-                                <div style="font-weight: 700; color: var(--text-title);">Foto saat ini: <?= e($product['image']) ?></div>
-                                <div style="color: var(--text-muted); font-size: 0.75rem;">Biarkan kosong di bawah ini jika tidak ingin mengubah foto.</div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="upload-zone" id="file-dropzone">
-                        <input 
-                            type="file" 
-                            id="image-input" 
-                            name="image" 
-                            class="file-input-hidden" 
-                            accept="image/jpeg,image/png,image/webp"
-                        >
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-blue); margin-bottom: 6px;">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-title);">
-                            Pilih atau tarik foto baru untuk mengganti
-                        </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                            JPG, PNG, WEBP &bull; Maks 2MB
-                        </div>
-                    </div>
-
-                    <!-- Upload Preview Box -->
-                    <div id="upload-preview-box" style="display: none; align-items: center; justify-content: space-between; margin-top: 10px; padding: 10px 14px; background: var(--canvas-surface-subtle); border: 1px solid var(--line-hairline); border-radius: var(--radius-md);">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <img src="" alt="Pratinjau Baru" id="upload-preview-img" style="width: 50px; height: 50px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--line-hairline);">
-                            <div>
-                                <div id="upload-preview-name" style="font-weight: 700; font-size: 0.85rem; color: var(--text-title);">-</div>
-                                <div id="upload-preview-size" style="color: var(--text-muted); font-size: 0.74rem;">-</div>
-                            </div>
-                        </div>
-                        <button type="button" id="btn-clear-upload" class="btn btn-sm btn-secondary" style="font-size: 0.72rem;">Hapus</button>
-                    </div>
-
-                    <?php if (isset($formErrors['image'])): ?>
-                        <div class="error-text"><?= e($formErrors['image']) ?></div>
-                    <?php endif; ?>
-                </div>
-
-                <!-- 6. DESKRIPSI PRODUK -->
-                <div class="form-group col-full">
-                    <label for="description" class="input-label">
-                        <span>Deskripsi Spesifikasi Produk</span>
-                    </label>
-                    <textarea 
-                        id="description" 
-                        name="description" 
-                        rows="4" 
-                        class="form-input"
-                    ><?= e($valDescription) ?></textarea>
-                </div>
+                <p class="card-description">Perbarui data spesifikasi dan stok produk di sistem inventaris.</p>
             </div>
 
-            <!-- FORM BUTTONS -->
-            <div class="form-actions-bar">
-                <a href="index.php" class="btn btn-secondary">
-                    Batalkan
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    Simpan Perubahan
-                </button>
+            <div class="card-content">
+                <form action="edit.php?id=<?= (int)$product['id'] ?>" method="POST" enctype="multipart/form-data" novalidate id="product-form">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="id" value="<?= (int)$product['id'] ?>">
+
+                    <div class="form-grid">
+                        <!-- 1. NAMA PRODUK -->
+                        <div class="form-group col-span-2">
+                            <label for="name" class="input-label">
+                                <span>Nama Produk <span class="required-mark">*</span></span>
+                                <span class="font-mono" style="font-size: 0.75rem; color: var(--muted-foreground);">Min. 3 karakter &bull; Unik</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                class="input-control <?= isset($formErrors['name']) ? 'is-invalid' : '' ?>" 
+                                value="<?= e($valName) ?>"
+                                required
+                            >
+                            <?php if (isset($formErrors['name'])): ?>
+                                <div class="form-error-msg"><?= e($formErrors['name']) ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 2. KATEGORI PRODUK -->
+                        <div class="form-group">
+                            <label for="category" class="input-label">
+                                <span>Kategori <span class="required-mark">*</span></span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="category" 
+                                name="category" 
+                                list="category-options" 
+                                class="input-control <?= isset($formErrors['category']) ? 'is-invalid' : '' ?>" 
+                                value="<?= e($valCategory) ?>"
+                                required
+                            >
+                            <datalist id="category-options">
+                                <?php foreach ($defaultCategories as $cat): ?>
+                                    <option value="<?= e($cat) ?>"></option>
+                                <?php endforeach; ?>
+                            </datalist>
+                            <?php if (isset($formErrors['category'])): ?>
+                                <div class="form-error-msg"><?= e($formErrors['category']) ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 3. KUANTITAS STOK -->
+                        <div class="form-group">
+                            <label for="stock" class="input-label">
+                                <span>Kuantitas Stok <span class="required-mark">*</span></span>
+                                <span id="stock-health-preview" class="badge badge-emerald">
+                                    Tersedia
+                                </span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="stock" 
+                                name="stock" 
+                                min="0" 
+                                step="1" 
+                                class="input-control font-mono <?= isset($formErrors['stock']) ? 'is-invalid' : '' ?>" 
+                                value="<?= e($valStock) ?>"
+                                required
+                            >
+                            <?php if (isset($formErrors['stock'])): ?>
+                                <div class="form-error-msg"><?= e($formErrors['stock']) ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 4. HARGA SATUAN (IDR) -->
+                        <div class="form-group col-span-2">
+                            <label for="price" class="input-label">
+                                <span>Harga Satuan (IDR) <span class="required-mark">*</span></span>
+                                <span class="font-mono" id="price-preview" style="font-size: 0.8125rem; font-weight: 600; color: var(--foreground);">Rp 0</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="price" 
+                                name="price" 
+                                min="1" 
+                                step="1" 
+                                class="input-control font-mono <?= isset($formErrors['price']) ? 'is-invalid' : '' ?>" 
+                                value="<?= e($valPrice) ?>"
+                                required
+                            >
+                            <?php if (isset($formErrors['price'])): ?>
+                                <div class="form-error-msg"><?= e($formErrors['price']) ?></div>
+                            <?php else: ?>
+                                <div class="form-hint">Harga per unit dalam Rupiah (harus > 0).</div>
+                            <?php endif; ?>
+
+                            <!-- Valuation Preview -->
+                            <div class="valuation-preview-card" style="margin-top: 0.5rem;">
+                                <span style="font-size: 0.75rem; color: var(--muted-foreground); text-transform: uppercase; font-weight: 500;">Estimasi Total Valuasi:</span>
+                                <span class="font-mono" id="total-batch-valuation" style="font-weight: 700; color: var(--foreground); font-size: 0.9375rem;">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 5. FOTO PRODUK (PENGGANTIAN) -->
+                        <div class="form-group col-span-2">
+                            <label class="input-label">
+                                <span>Foto Produk</span>
+                                <span class="font-mono" style="font-size: 0.75rem; color: var(--muted-foreground);">JPG, PNG, WEBP &bull; Maks 2MB</span>
+                            </label>
+
+                            <?php if (!empty($product['image']) && file_exists(__DIR__ . '/uploads/' . $product['image'])): ?>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+                                    <img src="uploads/<?= e($product['image']) ?>" alt="Foto Saat Ini" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border); background: #ffffff;">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 0.8125rem; font-weight: 600; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <?= e($product['image']) ?>
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: var(--muted-foreground);">Foto saat ini aktif di sistem. Pilih gambar baru di bawah jika ingin menggantinya.</div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+
+                            <div class="file-dropzone" id="file-dropzone">
+                                <input 
+                                    type="file" 
+                                    id="image-input" 
+                                    name="image" 
+                                    class="dropzone-hidden-input" 
+                                    accept="image/jpeg,image/png,image/webp"
+                                >
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 0.5rem auto; color: var(--muted-foreground);">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <div style="font-size: 0.875rem; font-weight: 500; color: var(--foreground);">
+                                    Pilih foto baru untuk mengganti
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--muted-foreground); margin-top: 2px;">
+                                    Biarkan kosong jika tetap menggunakan gambar sebelumnya
+                                </div>
+                            </div>
+
+                            <!-- Image preview box -->
+                            <div id="upload-preview-box" style="display: none; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding: 0.75rem 1rem; background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <img src="" alt="Pratinjau Baru" id="upload-preview-img" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border);">
+                                    <div>
+                                        <div id="upload-preview-name" style="font-size: 0.8125rem; font-weight: 600; color: var(--foreground);">-</div>
+                                        <div id="upload-preview-size" class="font-mono" style="font-size: 0.75rem; color: var(--muted-foreground);">-</div>
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-clear-upload" class="btn btn-outline btn-sm">Hapus</button>
+                            </div>
+
+                            <?php if (isset($formErrors['image'])): ?>
+                                <div class="form-error-msg"><?= e($formErrors['image']) ?></div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- 6. DESKRIPSI PRODUK -->
+                        <div class="form-group col-span-2">
+                            <label for="description" class="input-label">
+                                <span>Deskripsi Spesifikasi</span>
+                            </label>
+                            <textarea 
+                                id="description" 
+                                name="description" 
+                                class="textarea-control"
+                            ><?= e($valDescription) ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Footer Buttons -->
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+                        <a href="index.php" class="btn btn-outline">
+                            Batalkan
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
-</div>
+</main>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

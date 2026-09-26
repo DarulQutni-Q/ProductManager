@@ -301,16 +301,14 @@ function initImageUploadDropzone() {
   ['dragenter', 'dragover'].forEach((evt) => {
     dropzone.addEventListener(evt, (e) => {
       e.preventDefault();
-      dropzone.style.borderColor = 'var(--brand-blue)';
-      dropzone.style.background = 'var(--brand-blue-light)';
+      dropzone.classList.add('is-dragover');
     });
   });
 
   ['dragleave', 'drop'].forEach((evt) => {
     dropzone.addEventListener(evt, (e) => {
       e.preventDefault();
-      dropzone.style.borderColor = 'rgba(15, 23, 42, 0.16)';
-      dropzone.style.background = 'var(--canvas-surface-subtle)';
+      dropzone.classList.remove('is-dragover');
     });
   });
 

@@ -1,0 +1,10 @@
+# SQLite databases
+database/*.sqlite
+database/*.sqlite-shm
+database/*.sqlite-wal
+
+# Environment & system files
+.env
+.DS_Store
+Thumbs.db
+*.log

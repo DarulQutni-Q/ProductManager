@@ -296,24 +296,24 @@ function getStockBadge(int $stock): array
 {
     if ($stock <= 0) {
         return [
-            'badge_class' => 'badge-depleted',
-            'status_text' => 'DEPLETED // 0 UNIT',
-            'dot_color'   => '#ff334b'
+            'badge_class' => 'bg-red-50 text-red-700 border-red-200/80',
+            'status_text' => 'Habis',
+            'dot_color'   => '#ef4444'
         ];
     }
 
     if ($stock <= 5) {
         return [
-            'badge_class' => 'badge-critical',
-            'status_text' => 'CRITICAL // ' . $stock . ' UNIT',
-            'dot_color'   => '#ffb800'
+            'badge_class' => 'bg-amber-50 text-amber-700 border-amber-200/80',
+            'status_text' => 'Sisa ' . $stock . ' unit',
+            'dot_color'   => '#f59e0b'
         ];
     }
 
     return [
-        'badge_class' => 'badge-nominal',
-        'status_text' => 'IN STOCK // ' . $stock . ' UNIT',
-        'dot_color'   => '#00e599'
+        'badge_class' => 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+        'status_text' => 'Tersedia (' . $stock . ')',
+        'dot_color'   => '#10b981'
     ];
 }
 
