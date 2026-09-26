@@ -82,76 +82,127 @@ function getDbConnection(): PDO
     }
 
     $sqlitePath = __DIR__ . '/../database/store_db.sqlite';
-    $driver = getenv('DB_CONNECTION') ?: 'auto';
+    $driver = strtolower(getenv('DB_CONNECTION') ?: 'auto');
+    $availableDrivers = PDO::getAvailableDrivers();
+    $hasMysql = in_array('mysql', $availableDrivers, true);
+    $hasSqlite = in_array('sqlite', $availableDrivers, true);
 
     // Jika pengguna secara eksplisit meminta SQLite
     if ($driver === 'sqlite') {
+        if (!$hasSqlite) {
+            throw new RuntimeException("Ekstensi PDO SQLite tidak tersedia di instalasi PHP ini.");
+        }
         $pdo = initSqliteConnection($sqlitePath);
         return $pdo;
     }
 
-    // Konfigurasi MySQL default
-    $host = getenv('DB_HOST') ?: '127.0.0.1';
-    $port = getenv('DB_PORT') ?: '3306';
-    $dbname = getenv('DB_NAME') ?: 'store_db';
-    $username = getenv('DB_USER') ?: 'root';
-    $password = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
+    $mysqlError = null;
+    $sqliteError = null;
 
-    $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $dbname);
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-        PDO::ATTR_PERSISTENT         => false,
-        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
-    ];
+    // Coba MySQL jika driver tersedia dan mode auto atau mysql
+    if ($hasMysql && ($driver === 'auto' || $driver === 'mysql')) {
+        $host = getenv('DB_HOST') ?: '127.0.0.1';
+        $port = getenv('DB_PORT') ?: '3306';
+        $dbname = getenv('DB_NAME') ?: 'store_db';
+        $username = getenv('DB_USER') ?: 'root';
+        $password = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 
-    try {
-        // Coba koneksi ke server MySQL
-        $pdo = new PDO($dsn, $username, $password, $options);
-        return $pdo;
-    } catch (PDOException $e) {
-        // Jika MySQL tidak aktif atau ditolak, alihkan otomatis ke SQLite bawaan
-        error_log('[DB_NOTICE] MySQL tidak tersedia (' . $e->getMessage() . '). Menggunakan SQLite fallback.');
+        $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $dbname);
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_PERSISTENT         => false,
+        ];
+
+        if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci";
+        }
+
         try {
-            $pdo = initSqliteConnection($sqlitePath);
+            $pdo = new PDO($dsn, $username, $password, $options);
             return $pdo;
-        } catch (Throwable $fallbackError) {
-            error_log('[DB_FATAL] Kegagalan inisialisasi basis data: ' . $fallbackError->getMessage());
+        } catch (Throwable $e) {
+            $mysqlError = $e->getMessage();
+            error_log('[DB_NOTICE] MySQL tidak tersedia (' . $mysqlError . '). Mengalihkan ke SQLite.');
         }
-
-        if (php_sapi_name() === 'cli') {
-            throw new RuntimeException("Koneksi database gagal (MySQL & SQLite): " . $e->getMessage());
-        }
-
-        // Tampilan Shadcn Dialog Error jika kedua engine gagal
-        http_response_code(500);
-        ?>
-        <!DOCTYPE html>
-        <html lang="id">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Koneksi Database Gagal - ProductManager</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
-            <style>body { font-family: 'Geist', sans-serif; }</style>
-        </head>
-        <body class="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-            <div class="w-full max-w-md bg-white border border-zinc-200 rounded-lg shadow-sm p-6 text-zinc-900">
-                <div class="flex items-center gap-3 text-red-600 mb-3">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <h1 class="text-lg font-semibold">Koneksi Database Terputus</h1>
-                </div>
-                <p class="text-sm text-zinc-500 mb-4">Tidak dapat menghubungkan ke MySQL ataupun SQLite. Pastikan hak akses direktori database dapat ditulis.</p>
-                <div class="bg-zinc-50 border border-zinc-200 rounded p-3 text-xs font-mono text-zinc-700 mb-4 overflow-x-auto">
-                    <?= htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') ?>
-                </div>
-                <a href="index.php" class="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-800 transition-colors">Muat Ulang Halaman</a>
-            </div>
-        </body>
-        </html>
-        <?php
-        exit;
+    } else {
+        $mysqlError = $hasMysql ? 'Driver MySQL dilewati (DB_CONNECTION=' . $driver . ')' : 'Ekstensi PHP pdo_mysql belum aktif';
     }
+
+    // Jika mode eksplisit mysql dan gagal, hentikan
+    if ($driver === 'mysql') {
+        if (php_sapi_name() === 'cli') {
+            throw new RuntimeException("Koneksi MySQL gagal: " . $mysqlError);
+        }
+    }
+
+    // Coba Fallback SQLite jika mode auto atau sqlite
+    if ($driver === 'auto' || $driver === 'sqlite') {
+        if ($hasSqlite) {
+            try {
+                $pdo = initSqliteConnection($sqlitePath);
+                return $pdo;
+            } catch (Throwable $fallbackError) {
+                $sqliteError = $fallbackError->getMessage();
+                error_log('[DB_FATAL] Inisialisasi SQLite gagal: ' . $sqliteError);
+            }
+        } else {
+            $sqliteError = 'Ekstensi PHP pdo_sqlite belum aktif di sistem.';
+        }
+    }
+
+    if (php_sapi_name() === 'cli') {
+        throw new RuntimeException(
+            "Koneksi database gagal (MySQL & SQLite):\n" .
+            " - MySQL : " . ($mysqlError ?? 'Tidak dicoba') . "\n" .
+            " - SQLite: " . ($sqliteError ?? 'Tidak dicoba')
+        );
+    }
+
+    // Tampilan Shadcn Dialog Error jika kedua engine gagal
+    http_response_code(500);
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Koneksi Database Gagal - ProductManager</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+        <style>body { font-family: 'Geist', sans-serif; }</style>
+    </head>
+    <body class="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
+        <div class="w-full max-w-lg bg-white border border-zinc-200 rounded-lg shadow-sm p-6 text-zinc-900">
+            <div class="flex items-center gap-3 text-red-600 mb-3">
+                <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <h1 class="text-lg font-semibold">Koneksi Database Terputus</h1>
+            </div>
+            <p class="text-sm text-zinc-500 mb-4">Aplikasi tidak dapat terhubung ke MySQL maupun basis data lokal SQLite.</p>
+            
+            <div class="space-y-3 mb-4">
+                <div class="bg-zinc-50 border border-zinc-200 rounded p-3 text-xs font-mono text-zinc-700">
+                    <div class="font-semibold text-zinc-900 mb-1">Status MySQL:</div>
+                    <?= htmlspecialchars((string)$mysqlError, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <div class="bg-zinc-50 border border-zinc-200 rounded p-3 text-xs font-mono text-zinc-700">
+                    <div class="font-semibold text-zinc-900 mb-1">Status SQLite:</div>
+                    <?= htmlspecialchars((string)$sqliteError, ENT_QUOTES, 'UTF-8') ?>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-900 mb-4">
+                <strong>Saran Solusi:</strong>
+                <ul class="list-disc pl-4 mt-1 space-y-1">
+                    <li>Jalankan server dengan skrip otomatis: <code class="font-mono bg-blue-100 px-1 rounded">./serve.sh</code></li>
+                    <li>Atau aktifkan MySQL XAMPP: <code class="font-mono bg-blue-100 px-1 rounded">sudo /opt/lampp/lampp startmysql</code></li>
+                </ul>
+            </div>
+            <a href="index.php" class="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-md hover:bg-zinc-800 transition-colors">Muat Ulang Halaman</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
 }

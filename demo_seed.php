@@ -22,18 +22,26 @@ if (!file_exists($sqlFile)) {
 $sqlContent = file_get_contents($sqlFile);
 
 try {
-    // Eksekusi multi-query schema
-    $pdo->exec($sqlContent);
+    $driverName = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+    if ($driverName === 'sqlite') {
+        $pdo->exec("DROP TABLE IF EXISTS products");
+        $sqlitePath = __DIR__ . '/database/store_db.sqlite';
+        initSqliteConnection($sqlitePath);
+    } else {
+        // Eksekusi multi-query schema untuk MySQL
+        $pdo->exec($sqlContent);
+    }
+
     $count = (int)$pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
 
     if (php_sapi_name() === 'cli') {
-        echo "\033[32m[SUCCESS]\033[0m Basis data berhasil di-reset & diisi ulang! Total spesimen: {$count}\n";
+        echo "\033[32m[SUCCESS]\033[0m Basis data ({$driverName}) berhasil di-reset & diisi ulang! Total spesimen: {$count}\n";
         exit(0);
     }
 
-    setFlash('success', 'Basis data store_db berhasil di-reset dan diisi ulang (' . $count . ' spesimen aktif terdaftar).', 'DATABASE RE-SEEDED');
+    setFlash('success', 'Basis data berhasil di-reset dan diisi ulang (' . $count . ' spesimen aktif terdaftar).', 'DATABASE RE-SEEDED');
     redirect('index.php');
-
 } catch (PDOException $e) {
     if (php_sapi_name() === 'cli') {
         echo "\033[31m[ERROR]\033[0m Gagal me-reset basis data: " . $e->getMessage() . "\n";
