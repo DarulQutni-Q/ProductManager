@@ -13,7 +13,7 @@ declare(strict_types=1);
         <div class="app-container footer-inner">
             <div>
                 <span style="font-weight: 600; color: var(--foreground);">ProductManager</span>
-                <span style="margin: 0 6px;">•</span>
+                <span style="margin: 0 6px; color: var(--muted-foreground);">•</span>
                 <span>Inventaris Perangkat &bull; Praktikum Pemrograman Web</span>
             </div>
 
@@ -23,7 +23,7 @@ declare(strict_types=1);
                     <span style="margin: 0 2px;">•</span>
                     <kbd>N</kbd> <span>Baru</span>
                     <span style="margin: 0 2px;">•</span>
-                    <kbd>V</kbd> <span>Mode View</span>
+                    <kbd>V</kbd> <span>Mode Tampilan</span>
                     <span style="margin: 0 2px;">•</span>
                     <kbd>Esc</kbd> <span>Tutup</span>
                 </div>
@@ -45,7 +45,7 @@ declare(strict_types=1);
                         <span class="badge badge-outline font-mono" id="inspector-sku">SKU-0000</span>
                         <span class="badge badge-secondary" id="inspector-category">Kategori</span>
                     </div>
-                    <h3 class="card-title" id="inspector-title" style="font-size: 1.15rem;">Detail Spesifikasi Produk</h3>
+                    <h3 class="card-title" id="inspector-title" style="font-size: 1.125rem;">Detail Spesifikasi Produk</h3>
                 </div>
                 <button type="button" class="modal-close-btn" id="inspector-close" aria-label="Tutup dialog">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="18" x2="18" y2="18"></line></svg>
@@ -53,7 +53,7 @@ declare(strict_types=1);
             </div>
 
             <div style="margin-bottom: 1.25rem;">
-                <div id="inspector-image-wrap" style="width: 100%; height: 160px; background: #fafafa; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <div id="inspector-image-wrap" style="width: 100%; height: 180px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; overflow: hidden;">
                     <img id="inspector-img" src="" alt="" style="max-height: 100%; max-width: 100%; object-fit: contain; padding: 0.5rem;">
                 </div>
 
@@ -92,15 +92,17 @@ declare(strict_types=1);
         <div class="modal-dialog">
             <div class="modal-header-row">
                 <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
-                    <div style="width: 2.25rem; height: 2.25rem; border-radius: var(--radius-sm); background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div style="width: 2.25rem; height: 2.25rem; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.12); color: var(--destructive); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     </div>
                     <div>
                         <h3 class="card-title" id="modal-delete-title">Hapus Produk?</h3>
-                        <p class="card-description" style="margin-top: 2px;">Tindakan ini permanen dan data produk akan dihapus dari sistem.</p>
+                        <p class="card-description" style="margin-top: 2px;">Tindakan ini permanen dan data produk akan dihapus dari sistem inventaris.</p>
                     </div>
                 </div>
-                <button type="button" class="modal-close-btn" id="modal-delete-x" aria-label="Tutup">&times;</button>
+                <button type="button" class="modal-close-btn" id="modal-delete-x" aria-label="Tutup dialog">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
             <div style="background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin: 1rem 0;">

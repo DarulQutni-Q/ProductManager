@@ -98,56 +98,66 @@ require_once __DIR__ . '/includes/header.php';
 
 <main class="app-container" style="flex: 1; padding-bottom: 3rem;">
 
-    <!-- 1. SHADCN METRICS STATS CARDS -->
-    <section class="stats-grid" aria-label="Ringkasan Inventaris">
-        <div class="metric-card">
-            <div class="metric-top">
-                <span>Total Produk</span>
-                <div class="metric-icon-wrap">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                </div>
+    <!-- 1. PAGE HEADER -->
+    <div class="page-header-row">
+        <div class="page-header-titles">
+            <h1>Katalog Produk</h1>
+            <p>Kelola inventaris suku cadang, modul IoT, dan status stok persediaan gudang.</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="database/store_db.sql" download class="btn btn-outline btn-sm" title="Download cadangan database SQL">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Ekspor SQL</span>
+            </a>
+            <a href="create.php" class="btn btn-primary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Tambah Produk</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 2. MINIMALIST KPI SUMMARY STRIP (High-density, Anti-slop) -->
+    <section class="kpi-strip" aria-label="Ringkasan Inventaris">
+        <div class="kpi-pill">
+            <div class="kpi-pill-label">
+                <span>Total Katalog</span>
+                <span class="badge badge-outline" style="font-size: 0.6875rem; padding: 0 0.35rem;">SKU Aktif</span>
             </div>
-            <div class="metric-val font-mono"><?= number_format((int)$stats['total_items']) ?></div>
-            <div class="metric-sub">SKU aktif terdaftar dalam sistem</div>
+            <div class="kpi-pill-val font-mono"><?= number_format((int)$stats['total_items']) ?> SKU</div>
         </div>
 
-        <div class="metric-card">
-            <div class="metric-top">
-                <span>Valuasi Inventaris</span>
-                <div class="metric-icon-wrap">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                </div>
+        <div class="kpi-pill">
+            <div class="kpi-pill-label">
+                <span>Total Valuasi Aset</span>
+                <span class="badge badge-outline" style="font-size: 0.6875rem; padding: 0 0.35rem;">Akumulasi</span>
             </div>
-            <div class="metric-val font-mono"><?= formatRupiah($stats['total_valuation']) ?></div>
-            <div class="metric-sub">Akumulasi nilai seluruh unit fisik</div>
+            <div class="kpi-pill-val font-mono"><?= formatRupiah($stats['total_valuation']) ?></div>
         </div>
 
-        <div class="metric-card">
-            <div class="metric-top">
-                <span>Total Unit Fisik</span>
-                <div class="metric-icon-wrap">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                </div>
+        <div class="kpi-pill">
+            <div class="kpi-pill-label">
+                <span>Kuantitas Fisik</span>
+                <span class="badge badge-outline" style="font-size: 0.6875rem; padding: 0 0.35rem;">Gudang</span>
             </div>
-            <div class="metric-val font-mono"><?= number_format((int)$stats['total_units']) ?></div>
-            <div class="metric-sub">Kuantitas seluruh persediaan gudang</div>
+            <div class="kpi-pill-val font-mono"><?= number_format((int)$stats['total_units']) ?> Unit</div>
         </div>
 
-        <div class="metric-card">
-            <div class="metric-top">
-                <span>Stok Menipis (≤ 5)</span>
-                <div class="metric-icon-wrap">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                </div>
+        <div class="kpi-pill">
+            <div class="kpi-pill-label">
+                <span>Stok Kritis (≤ 5)</span>
+                <?php if ((int)$stats['critical_items'] > 0): ?>
+                    <span class="badge badge-amber" style="font-size: 0.6875rem; padding: 0 0.35rem;">Perhatian</span>
+                <?php else: ?>
+                    <span class="badge badge-emerald" style="font-size: 0.6875rem; padding: 0 0.35rem;">Aman</span>
+                <?php endif; ?>
             </div>
-            <div class="metric-val font-mono" style="color: <?= (int)$stats['critical_items'] > 0 ? '#b45309' : '#047857' ?>;">
+            <div class="kpi-pill-val font-mono" style="color: <?= (int)$stats['critical_items'] > 0 ? '#f59e0b' : '#10b981' ?>;">
                 <?= number_format((int)$stats['critical_items']) ?> SKU
             </div>
-            <div class="metric-sub">Perlu pengadaan ulang segera</div>
         </div>
     </section>
 
-    <!-- 2. SEARCH & FILTER TOOLBAR -->
+    <!-- 3. UNIFIED SEARCH & FILTER TOOLBAR -->
     <section class="catalog-toolbar" aria-label="Pencarian dan Filter">
         <form method="GET" action="index.php" id="filter-form">
             <div class="toolbar-row">
@@ -167,8 +177,8 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
 
                 <!-- Sort & View Mode Group -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
-                    <select name="sort" class="select-control" onchange="this.form.submit()">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto;">
+                    <select name="sort" class="select-control" onchange="this.form.submit()" aria-label="Urutkan Data">
                         <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Terbaru</option>
                         <option value="oldest" <?= $sort === 'oldest' ? 'selected' : '' ?>>Terlama</option>
                         <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Harga: Rendah ke Tinggi</option>
@@ -179,10 +189,10 @@ require_once __DIR__ . '/includes/header.php';
 
                     <!-- View Mode Toggle Buttons (Grid vs Table) -->
                     <div class="view-toggle-group">
-                        <button type="button" class="view-toggle-btn is-active" id="btn-view-grid" title="Tampilan Grid" aria-label="Tampilan Grid">
+                        <button type="button" class="view-toggle-btn is-active" id="btn-view-grid" title="Tampilan Grid [V]" aria-label="Tampilan Grid">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         </button>
-                        <button type="button" class="view-toggle-btn" id="btn-view-table" title="Tampilan Tabel Data" aria-label="Tampilan Tabel Data">
+                        <button type="button" class="view-toggle-btn" id="btn-view-table" title="Tampilan Tabel Data [V]" aria-label="Tampilan Tabel Data">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                         </button>
                     </div>
@@ -193,7 +203,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- Category Tabs Row -->
+            <!-- Category Tabs Row (Authentic Shadcn Tabs) -->
             <div class="category-tabs" style="margin-top: 0.5rem;">
                 <a href="index.php?<?= e(http_build_query(array_merge($_GET, ['category' => '', 'page' => 1]))) ?>" 
                    class="tab-item <?= $categoryFilter === '' ? 'is-active' : '' ?>">
@@ -211,12 +221,11 @@ require_once __DIR__ . '/includes/header.php';
         </form>
     </section>
 
-    <!-- 3. CATALOG CONTENT AREA -->
-    <div class="catalog-header-area">
-        <h2 class="catalog-title">Daftar Produk</h2>
-        <div class="catalog-count-badge" id="live-catalog-count">
+    <!-- 4. CATALOG CONTENT HEADER -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+        <span style="font-size: 0.8125rem; font-weight: 500; color: var(--muted-foreground);" id="live-catalog-count">
             Menampilkan <?= count($products) ?> dari <?= $totalFiltered ?> item
-        </div>
+        </span>
     </div>
 
     <?php if (empty($products)): ?>
@@ -327,7 +336,6 @@ require_once __DIR__ . '/includes/header.php';
                                 title="Hapus produk"
                             >
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                <span>Hapus</span>
                             </button>
                         </div>
                     </div>
@@ -340,12 +348,13 @@ require_once __DIR__ . '/includes/header.php';
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 70px;">Produk</th>
-                        <th>Nama & Spesifikasi</th>
+                        <th style="width: 60px;">Foto</th>
+                        <th style="width: 110px;">Kode SKU</th>
+                        <th>Nama Produk & Rincian</th>
                         <th style="width: 140px;">Kategori</th>
                         <th style="width: 140px;">Status Stok</th>
-                        <th style="width: 150px; text-align: right;">Harga</th>
-                        <th style="width: 170px; text-align: right;">Aksi</th>
+                        <th style="width: 140px; text-align: right;">Harga Satuan</th>
+                        <th style="width: 130px; text-align: right;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="catalog-table-body">
@@ -381,17 +390,19 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </td>
 
-                            <!-- Name & SKU -->
+                            <!-- SKU -->
                             <td>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span class="badge badge-outline font-mono" style="font-size: 0.6875rem;">
-                                        <?= e($skuCode) ?>
-                                    </span>
-                                    <span style="font-weight: 600; color: var(--foreground); font-size: 0.875rem;">
-                                        <?= htmlspecialchars((string)$product['name'], ENT_QUOTES, 'UTF-8') ?>
-                                    </span>
+                                <span class="badge badge-outline font-mono" style="font-size: 0.6875rem;">
+                                    <?= e($skuCode) ?>
+                                </span>
+                            </td>
+
+                            <!-- Name & Description -->
+                            <td>
+                                <div style="font-weight: 600; color: var(--foreground); font-size: 0.875rem;">
+                                    <?= htmlspecialchars((string)$product['name'], ENT_QUOTES, 'UTF-8') ?>
                                 </div>
-                                <div style="color: var(--muted-foreground); font-size: 0.75rem; margin-top: 2px; max-width: 380px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <div style="color: var(--muted-foreground); font-size: 0.75rem; margin-top: 2px; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     <?= e($product['description'] ?: '-') ?>
                                 </div>
                             </td>
@@ -445,7 +456,7 @@ require_once __DIR__ . '/includes/header.php';
 
     <?php endif; ?>
 
-    <!-- 4. SHADCN PAGINATION BAR -->
+    <!-- 5. SHADCN PAGINATION BAR -->
     <?php if ($totalPages > 1): ?>
         <nav class="pagination-bar" aria-label="Navigasi Halaman">
             <?php if ($page > 1): ?>

@@ -266,7 +266,7 @@ require_once __DIR__ . '/includes/header.php';
 
                             <?php if (!empty($product['image']) && file_exists(__DIR__ . '/uploads/' . $product['image'])): ?>
                                 <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: var(--secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
-                                    <img src="uploads/<?= e($product['image']) ?>" alt="Foto Saat Ini" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border); background: #ffffff;">
+                                    <img src="uploads/<?= e($product['image']) ?>" alt="Foto Saat Ini" style="width: 44px; height: 44px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--border); background: var(--card);">
                                     <div style="flex: 1; min-width: 0;">
                                         <div style="font-size: 0.8125rem; font-weight: 600; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                             <?= e($product['image']) ?>
