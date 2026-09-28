@@ -24,7 +24,7 @@ $currentScript = basename($_SERVER['PHP_SELF'] ?? 'index.php');
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=3">
     
     <!-- Immediate Dark Mode Evaluation to Prevent FOUC -->
     <script>
@@ -100,7 +100,7 @@ $currentScript = basename($_SERVER['PHP_SELF'] ?? 'index.php');
                     </svg>
                 </button>
 
-                <a href="https://github.com/DarulQutni-Q/ProductManager" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm btn-icon" title="Repository GitHub">
+                <a href="https://github.com/DarulQutni-Q/ProductManager" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm btn-icon btn-github-link" title="Repository GitHub">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                 </a>
 

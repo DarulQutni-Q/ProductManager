@@ -18,7 +18,7 @@ declare(strict_types=1);
             </div>
 
             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--muted-foreground);">
+                <div class="footer-shortcuts" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--muted-foreground);">
                     <kbd>/</kbd> <span>Cari</span>
                     <span style="margin: 0 2px;">•</span>
                     <kbd>N</kbd> <span>Baru</span>

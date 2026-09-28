@@ -177,7 +177,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
 
                 <!-- Sort & View Mode Group -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto;">
+                <div class="toolbar-controls-right" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto;">
                     <select name="sort" class="select-control" onchange="this.form.submit()" aria-label="Urutkan Data">
                         <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Terbaru</option>
                         <option value="oldest" <?= $sort === 'oldest' ? 'selected' : '' ?>>Terlama</option>
